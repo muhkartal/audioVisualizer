@@ -1,13 +1,6 @@
-"""
-Audio Visualizer - Main Entry Point
-
-A real-time audio visualizer with spectrum analysis and beat detection.
-"""
-
 import sys
 import os
 
-# Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pygame
@@ -21,35 +14,23 @@ from src.visualization.renderer import Renderer
 
 
 class AudioVisualizer:
-    """
-    Main application class for the audio visualizer.
-
-    Coordinates audio capture, analysis, and visualization.
-    """
-
     def __init__(self):
-        """Initialize the audio visualizer."""
-        # Audio components
         self.audio_source = None
         self.fft_analyzer = FFTAnalyzer()
         self.beat_detector = BeatDetector()
 
-        # Visualization
         self.renderer = Renderer()
         self.renderer.on_quit = self.quit
         self.renderer.on_key = self.handle_key
         self.renderer.on_file_drop = self.handle_file_drop
 
-        # State
         self.running = False
         self.current_features = AudioFeatures()
 
-        # File player (will be imported when needed)
         self.file_player = None
         self.audio_manager = None
 
     def start(self) -> None:
-        """Start the audio visualizer."""
         print("Starting Audio Visualizer...")
         print()
         print("Controls (press H in app for full list):")
@@ -61,16 +42,13 @@ class AudioVisualizer:
         print("  Other:       H=Help  D=Debug  ESC=Quit")
         print()
 
-        # Start with microphone by default
         self._start_microphone()
 
         self.running = True
         self._main_loop()
 
     def _start_microphone(self) -> None:
-        """Start microphone input."""
         try:
-            # Stop current source if any
             if self.audio_source:
                 self.audio_source.stop()
 
@@ -84,23 +62,17 @@ class AudioVisualizer:
             self.audio_source = None
 
     def _main_loop(self) -> None:
-        """Main application loop."""
         while self.running:
-            # Handle events
             if not self.renderer.handle_events():
                 self.running = False
                 break
 
-            # Get audio samples and analyze
             if self.audio_source and self.audio_source.is_running:
                 if not self.audio_source.is_paused:
-                    # Get samples for FFT
                     samples = self.audio_source.get_samples_for_fft(FFT_SIZE)
 
-                    # Analyze
                     self.current_features = self.fft_analyzer.analyze(samples)
 
-                    # Beat detection
                     is_beat, strength, tempo = self.beat_detector.detect(
                         self.current_features.spectrum
                     )
@@ -108,7 +80,6 @@ class AudioVisualizer:
                     self.current_features.beat_strength = strength
                     self.current_features.tempo_bpm = tempo
 
-            # Update and draw
             self.renderer.update(self.current_features)
             self.renderer.draw(
                 self.current_features,
@@ -117,39 +88,22 @@ class AudioVisualizer:
             )
 
     def handle_key(self, key: int, mod: int) -> None:
-        """
-        Handle keyboard input.
-
-        Args:
-            key: PyGame key constant
-            mod: Modifier keys state
-        """
         if key == pygame.K_SPACE:
-            # Toggle pause
             if self.audio_source:
                 paused = self.audio_source.toggle_pause()
                 print("Paused" if paused else "Resumed")
 
         elif key == pygame.K_m:
-            # Toggle microphone
             self._start_microphone()
 
         elif key == pygame.K_o:
-            # Open file dialog
             self._open_file_dialog()
 
     def handle_file_drop(self, filepath: str) -> None:
-        """
-        Handle file dropped onto window.
-
-        Args:
-            filepath: Path to dropped file
-        """
         print(f"File dropped: {filepath}")
         self._load_audio_file(filepath)
 
     def _open_file_dialog(self) -> None:
-        """Open file selection dialog."""
         try:
             from src.ui.file_browser import FileBrowser
             filepath = FileBrowser.open_file()
@@ -161,20 +115,12 @@ class AudioVisualizer:
             print(f"Error opening file dialog: {e}")
 
     def _load_audio_file(self, filepath: str) -> None:
-        """
-        Load and play an audio file.
-
-        Args:
-            filepath: Path to audio file
-        """
         try:
             from src.audio.file_player import FilePlayer
 
-            # Stop current source
             if self.audio_source:
                 self.audio_source.stop()
 
-            # Create file player
             self.audio_source = FilePlayer(filepath)
             self.audio_source.start()
             self.fft_analyzer.reset()
@@ -185,11 +131,9 @@ class AudioVisualizer:
             print("File player not available yet.")
         except Exception as e:
             print(f"Error loading file: {e}")
-            # Fall back to microphone
             self._start_microphone()
 
     def quit(self) -> None:
-        """Clean up and quit the application."""
         print("Shutting down...")
 
         if self.audio_source:
@@ -200,7 +144,6 @@ class AudioVisualizer:
 
 
 def main():
-    """Main entry point."""
     app = AudioVisualizer()
 
     try:

@@ -1,7 +1,3 @@
-"""
-Radial Pattern Visualizer - Clean circular audio visualization with radial lines.
-"""
-
 import pygame
 import numpy as np
 import math
@@ -14,48 +10,27 @@ from src.visualization.base_visualizer import BaseVisualizer
 
 
 class RadialPattern(BaseVisualizer):
-    """
-    Circular visualization with radial frequency lines.
-
-    Clean grayscale aesthetic with smooth animations.
-    """
-
     def __init__(self, width: int, height: int):
-        """
-        Initialize the radial pattern visualizer.
-
-        Args:
-            width: Display width in pixels
-            height: Display height in pixels
-        """
         super().__init__(width, height)
 
-        # Center point
         self.center_x = width // 2
         self.center_y = (height - PANEL_HEIGHT) // 2
 
-        # Radial settings
         self.num_segments = NUM_BANDS
         self.min_radius = 80
         self.max_radius = min(width, height - PANEL_HEIGHT) // 2 - 50
 
-        # Animation state
         self.rotation = 0.0
         self.pulse = 0.0
         self.glow_intensity = 0.0
 
-        # Pre-compute angles
         self.angles = np.linspace(0, 2 * np.pi, self.num_segments, endpoint=False)
 
-        # Smoothed spectrum for cleaner animation
         self.smoothed_spectrum = np.zeros(self.num_segments)
 
     def update(self, features: AudioFeatures) -> None:
-        """Update visualizer state."""
-        # Smooth rotation
         self.rotation += 0.005
 
-        # Beat response
         if features.is_beat:
             self.pulse = features.beat_strength * 0.6
             self.glow_intensity = features.beat_strength
@@ -63,23 +38,16 @@ class RadialPattern(BaseVisualizer):
             self.pulse *= 0.9
             self.glow_intensity *= 0.85
 
-        # Smooth spectrum animation
         self.smoothed_spectrum += (features.spectrum - self.smoothed_spectrum) * 0.25
 
     def draw(self, surface: pygame.Surface, features: AudioFeatures) -> None:
-        """Draw the radial visualization."""
-        # Draw subtle reference circles
         self._draw_reference_circles(surface)
 
-        # Draw radial lines
         self._draw_radial_lines(surface)
 
-        # Draw center
         self._draw_center(surface, features)
 
     def _draw_reference_circles(self, surface: pygame.Surface) -> None:
-        """Draw subtle reference circles."""
-        # Just two subtle circles for reference
         for i, radius in enumerate([self.min_radius, self.max_radius * 0.6]):
             pygame.draw.circle(
                 surface, (35, 35, 40),
@@ -88,19 +56,15 @@ class RadialPattern(BaseVisualizer):
             )
 
     def _draw_radial_lines(self, surface: pygame.Surface) -> None:
-        """Draw radial frequency lines."""
         spectrum = self.smoothed_spectrum
 
         for i in range(self.num_segments):
-            # Calculate angle with rotation
             angle = self.angles[i] + self.rotation
 
-            # Line length based on spectrum
             magnitude = spectrum[i] if i < len(spectrum) else 0
             inner_radius = self.min_radius + self.pulse * 8
             outer_radius = inner_radius + magnitude * (self.max_radius - inner_radius)
 
-            # Calculate start and end points
             cos_a = math.cos(angle)
             sin_a = math.sin(angle)
 
@@ -109,13 +73,11 @@ class RadialPattern(BaseVisualizer):
             end_x = self.center_x + cos_a * outer_radius
             end_y = self.center_y + sin_a * outer_radius
 
-            # Grayscale color - brighter for higher magnitude
             base_brightness = 90
             brightness = int(base_brightness + magnitude * (220 - base_brightness))
             brightness = min(255, brightness + int(self.glow_intensity * 25))
             color = (brightness, brightness, min(255, brightness + 5))
 
-            # Line thickness based on magnitude
             thickness = max(2, int(2 + magnitude * 3))
 
             pygame.draw.line(surface, color,
@@ -123,8 +85,6 @@ class RadialPattern(BaseVisualizer):
                            thickness)
 
     def _draw_center(self, surface: pygame.Surface, features: AudioFeatures) -> None:
-        """Draw the center circle."""
-        # Glow on beat
         if self.glow_intensity > 0.1:
             glow_radius = int(self.min_radius * 0.8 + self.pulse * 15)
             glow_surface = pygame.Surface(
@@ -141,7 +101,6 @@ class RadialPattern(BaseVisualizer):
                 special_flags=pygame.BLEND_RGBA_ADD
             )
 
-        # Outer ring
         ring_radius = int(self.min_radius * 0.5 + features.bass * 10 + self.pulse * 8)
         ring_brightness = 100 + int(features.bass * 60)
         pygame.draw.circle(
@@ -149,7 +108,6 @@ class RadialPattern(BaseVisualizer):
             (self.center_x, self.center_y), ring_radius, 2
         )
 
-        # Inner filled circle
         inner_radius = int(ring_radius * 0.5)
         inner_brightness = 50 + int(features.bass * 40)
         pygame.draw.circle(
@@ -157,14 +115,12 @@ class RadialPattern(BaseVisualizer):
             (self.center_x, self.center_y), inner_radius
         )
 
-        # Center dot
         pygame.draw.circle(
             surface, (180, 180, 185),
             (self.center_x, self.center_y), 3
         )
 
     def on_resize(self, width: int, height: int) -> None:
-        """Handle window resize."""
         super().on_resize(width, height)
         self.center_x = width // 2
         self.center_y = (height - PANEL_HEIGHT) // 2
