@@ -1,0 +1,16 @@
+# Audio Visualizer Dependencies
+
+# Audio I/O - better Windows support than PyAudio
+sounddevice>=0.4.6
+
+# Audio loading and feature extraction
+librosa>=0.10.1
+
+# FFT and array operations
+numpy>=1.24.0
+
+# Signal processing and filtering
+scipy>=1.11.0
+
+# Real-time rendering
+pygame>=2.5.0
