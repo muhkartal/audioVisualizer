@@ -5,7 +5,8 @@ from dataclasses import dataclass
 from typing import List
 
 import sys
-sys.path.insert(0, str(__file__).rsplit('\\', 3)[0])
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from config.settings import PANEL_HEIGHT, BEAT_FLASH_INTENSITY
 from src.analysis.audio_features import AudioFeatures
 from src.visualization.base_visualizer import BaseVisualizer

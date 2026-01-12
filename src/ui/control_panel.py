@@ -1,7 +1,8 @@
 import pygame
 
 import sys
-sys.path.insert(0, str(__file__).rsplit('\\', 3)[0])
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from config.settings import (
     PANEL_HEIGHT, PANEL_BG_COLOR, PANEL_TEXT_COLOR, FONT_SIZE
 )

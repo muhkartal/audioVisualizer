@@ -2,7 +2,8 @@ import numpy as np
 from scipy.signal import get_window
 
 import sys
-sys.path.insert(0, str(__file__).rsplit('\\', 3)[0])
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from config.settings import (
     SAMPLE_RATE, FFT_SIZE, NUM_BANDS,
     FREQ_MIN, FREQ_MAX, SMOOTHING_FACTOR, PEAK_DECAY,

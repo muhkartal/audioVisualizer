@@ -4,7 +4,8 @@ import threading
 import os
 
 import sys
-sys.path.insert(0, str(__file__).rsplit('\\', 3)[0])
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from config.settings import SAMPLE_RATE, CHUNK_SIZE
 from src.audio.audio_source import AudioSource
 from src.audio.audio_buffer import AudioBuffer

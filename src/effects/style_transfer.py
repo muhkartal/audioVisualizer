@@ -6,7 +6,8 @@ from typing import Optional, Tuple
 import os
 
 import sys
-sys.path.insert(0, str(__file__).rsplit('\\', 3)[0])
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 
 class StyleTransfer:
@@ -160,7 +161,7 @@ class StyleTransfer:
                 try:
                     self.output_queue.get_nowait()
                     self.output_queue.put_nowait(styled)
-                except:
+                except (queue.Empty, queue.Full):
                     pass
 
     def _apply_style(self, frame: np.ndarray) -> np.ndarray:

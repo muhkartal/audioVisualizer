@@ -2,7 +2,8 @@ from typing import Optional
 import os
 
 import sys
-sys.path.insert(0, str(__file__).rsplit('\\', 3)[0])
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from src.audio.audio_source import AudioSource
 from src.audio.microphone_input import MicrophoneInput
 from src.audio.file_player import FilePlayer

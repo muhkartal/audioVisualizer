@@ -2,7 +2,8 @@ import numpy as np
 import sounddevice as sd
 
 import sys
-sys.path.insert(0, str(__file__).rsplit('\\', 3)[0])
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from config.settings import SAMPLE_RATE, CHUNK_SIZE
 from src.audio.audio_source import AudioSource
 from src.audio.audio_buffer import AudioBuffer
@@ -82,6 +83,6 @@ class MicrophoneInput(AudioSource):
         if self.device is not None:
             try:
                 return f"Mic: {sd.query_devices(self.device)['name']}"
-            except:
+            except (IndexError, KeyError, sd.PortAudioError):
                 pass
         return "Microphone"

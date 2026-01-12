@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  audio-visualizer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: audio-visualizer
+    # Required for GUI display
+    environment:
+      - DISPLAY=${DISPLAY:-:0}
+      - PULSE_SERVER=unix:/run/user/1000/pulse/native
+      - SDL_AUDIODRIVER=pulseaudio
+    volumes:
+      # X11 socket for display
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      # PulseAudio socket for audio
+      - ${XDG_RUNTIME_DIR}/pulse/native:/run/user/1000/pulse/native
+      - ~/.config/pulse/cookie:/home/visualizer/.config/pulse/cookie:ro
+      # Optional: Mount music directory
+      - ~/Music:/home/visualizer/Music:ro
+    devices:
+      # Audio devices
+      - /dev/snd:/dev/snd
+    network_mode: host
+    # Required for audio access
+    privileged: false
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+
+# Usage:
+# 1. Allow X11 access: xhost +local:docker
+# 2. Run: docker-compose up --build
+# 3. After use: xhost -local:docker
