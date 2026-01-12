@@ -49,7 +49,11 @@ class Renderer:
 
         self.on_quit = None
         self.on_key = None
+        self.on_key_up = None
         self.on_file_drop = None
+
+        self.note_visualizer = None
+        self.piano_mode = False
 
     def handle_events(self) -> bool:
         for event in pygame.event.get():
@@ -76,6 +80,10 @@ class Renderer:
                 if self.on_file_drop:
                     self.on_file_drop(event.file)
 
+            elif event.type == pygame.KEYUP:
+                if self.on_key_up:
+                    self.on_key_up(event.key, event.mod)
+
         return True
 
     def _handle_renderer_key(self, key: int, mod: int) -> bool:
@@ -96,30 +104,31 @@ class Renderer:
             self.visualizer_manager.switch_to(2)
             return True
 
-        if key == pygame.K_g:
-            enabled = self.post_processor.toggle_effect('glow')
-            print(f"Glow: {'ON' if enabled else 'OFF'}")
-            return True
+        if not self.piano_mode:
+            if key == pygame.K_g:
+                enabled = self.post_processor.toggle_effect('glow')
+                print(f"Glow: {'ON' if enabled else 'OFF'}")
+                return True
 
-        if key == pygame.K_b:
-            enabled = self.post_processor.toggle_effect('bloom')
-            print(f"Bloom: {'ON' if enabled else 'OFF'}")
-            return True
+            if key == pygame.K_b:
+                enabled = self.post_processor.toggle_effect('bloom')
+                print(f"Bloom: {'ON' if enabled else 'OFF'}")
+                return True
 
-        if key == pygame.K_v:
-            enabled = self.post_processor.toggle_effect('vignette')
-            print(f"Vignette: {'ON' if enabled else 'OFF'}")
-            return True
+            if key == pygame.K_v:
+                enabled = self.post_processor.toggle_effect('vignette')
+                print(f"Vignette: {'ON' if enabled else 'OFF'}")
+                return True
 
-        if key == pygame.K_c:
-            enabled = self.post_processor.toggle_effect('chromatic')
-            print(f"Chromatic aberration: {'ON' if enabled else 'OFF'}")
-            return True
+            if key == pygame.K_c:
+                enabled = self.post_processor.toggle_effect('chromatic')
+                print(f"Chromatic aberration: {'ON' if enabled else 'OFF'}")
+                return True
 
-        if key == pygame.K_l:
-            enabled = self.post_processor.toggle_effect('scanlines')
-            print(f"Scanlines: {'ON' if enabled else 'OFF'}")
-            return True
+            if key == pygame.K_l:
+                enabled = self.post_processor.toggle_effect('scanlines')
+                print(f"Scanlines: {'ON' if enabled else 'OFF'}")
+                return True
 
         if key == pygame.K_F1:
             self.post_processor.set_preset('clean')
@@ -173,6 +182,8 @@ class Renderer:
         self.visualizer_manager.on_resize(width, height)
         self.post_processor.on_resize(width, height)
         self.style_transfer.on_resize(width, height)
+        if self.note_visualizer:
+            self.note_visualizer.on_resize(width, height)
 
     def _toggle_style_transfer(self) -> None:
         if not self.style_transfer.onnx_available:
@@ -211,10 +222,13 @@ class Renderer:
         self.visualizer_manager.update(features)
 
     def draw(self, features: AudioFeatures, source_name: str = "",
-             is_paused: bool = False) -> None:
+             is_paused: bool = False, piano_mode: bool = False) -> None:
         self.screen.fill(BG_COLOR)
 
         self.visualizer_manager.draw(self.screen, features)
+
+        if self.note_visualizer and piano_mode:
+            self.note_visualizer.draw(self.screen)
 
         self.post_processor.apply(self.screen, features)
 
@@ -327,6 +341,12 @@ class Renderer:
                 "O         Open audio file",
                 "M         Toggle microphone",
                 "Space     Pause/Resume",
+            ]),
+            ("Synthesizer (Piano Mode)", [
+                "F6        Toggle Piano Mode",
+                "A-L       Play white keys (C4-D5)",
+                "W,E,T,Y,U Black keys (sharps)",
+                "F7        Cycle waveform",
             ]),
             ("Visualization Modes", [
                 "Tab       Next mode",

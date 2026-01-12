@@ -11,6 +11,9 @@ from src.analysis.fft_analyzer import FFTAnalyzer
 from src.analysis.beat_detector import BeatDetector
 from src.analysis.audio_features import AudioFeatures
 from src.visualization.renderer import Renderer
+from src.synthesizer import Synthesizer
+from src.synthesizer.keyboard_mapping import is_synth_key
+from src.visualization.note_visualizer import NoteVisualizer
 
 
 class AudioVisualizer:
@@ -22,10 +25,20 @@ class AudioVisualizer:
         self.renderer = Renderer()
         self.renderer.on_quit = self.quit
         self.renderer.on_key = self.handle_key
+        self.renderer.on_key_up = self.handle_key_up
         self.renderer.on_file_drop = self.handle_file_drop
+
+        self.synthesizer = Synthesizer()
+        self.note_visualizer = NoteVisualizer(
+            self.renderer.width,
+            self.renderer.height,
+            self.synthesizer
+        )
+        self.renderer.note_visualizer = self.note_visualizer
 
         self.running = False
         self.current_features = AudioFeatures()
+        self.piano_mode = False
 
         self.file_player = None
         self.audio_manager = None
@@ -34,7 +47,8 @@ class AudioVisualizer:
         print("Starting Audio Visualizer...")
         print()
         print("Controls (press H in app for full list):")
-        print("  Audio:       O=Open  M=Mic  Space=Pause")
+        print("  Audio:       O=Open  M=Mic  Space=Pause  F6=Piano Mode")
+        print("  Synth:       A-L=Play notes  F7=Waveform")
         print("  Modes:       Tab=Next  1-3=Select mode")
         print("  Effects:     G=Glow  B=Bloom  V=Vignette")
         print("  Presets:     F1=Clean  F2=Subtle  F3=Vibrant  F4=Retro  F5=Dreamy")
@@ -43,6 +57,7 @@ class AudioVisualizer:
         print()
 
         self._start_microphone()
+        self.synthesizer.start()
 
         self.running = True
         self._main_loop()
@@ -84,20 +99,58 @@ class AudioVisualizer:
             self.renderer.draw(
                 self.current_features,
                 source_name=self.audio_source.name if self.audio_source else "None",
-                is_paused=self.audio_source.is_paused if self.audio_source else False
+                is_paused=self.audio_source.is_paused if self.audio_source else False,
+                piano_mode=self.piano_mode
             )
 
     def handle_key(self, key: int, mod: int) -> None:
+        if self.piano_mode and is_synth_key(key):
+            self.synthesizer.note_on(key)
+            return
+
+        if key == pygame.K_F6:
+            self._toggle_piano_mode()
+            return
+
+        if key == pygame.K_F7:
+            waveform = self.synthesizer.cycle_waveform()
+            print(f"Waveform: {waveform}")
+            return
+
         if key == pygame.K_SPACE:
             if self.audio_source:
                 paused = self.audio_source.toggle_pause()
                 print("Paused" if paused else "Resumed")
 
         elif key == pygame.K_m:
-            self._start_microphone()
+            if self.piano_mode:
+                self._toggle_piano_mode()
+            else:
+                self._start_microphone()
 
         elif key == pygame.K_o:
+            if self.piano_mode:
+                self._toggle_piano_mode()
             self._open_file_dialog()
+
+    def _toggle_piano_mode(self) -> None:
+        self.piano_mode = not self.piano_mode
+        self.renderer.piano_mode = self.piano_mode
+
+        if self.piano_mode:
+            if self.audio_source and hasattr(self.audio_source, 'stop'):
+                self.audio_source.stop()
+            self.audio_source = self.synthesizer
+            self.fft_analyzer.reset()
+            self.beat_detector.reset()
+            print("Piano Mode: ON - Visualizing synthesizer")
+        else:
+            self._start_microphone()
+            print("Piano Mode: OFF - Visualizing microphone")
+
+    def handle_key_up(self, key: int, mod: int) -> None:
+        if self.piano_mode and is_synth_key(key):
+            self.synthesizer.note_off(key)
 
     def handle_file_drop(self, filepath: str) -> None:
         print(f"File dropped: {filepath}")
@@ -139,6 +192,7 @@ class AudioVisualizer:
         if self.audio_source:
             self.audio_source.stop()
 
+        self.synthesizer.stop()
         self.renderer.quit()
         self.running = False
 
